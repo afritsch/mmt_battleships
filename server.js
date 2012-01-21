@@ -31,7 +31,7 @@ var app = require('http').createServer(handler)
   , players = []
   , dgram = require('dgram')
   , connectionQuerySent = false
-  , myPlayername = "Babsi"
+  , myPlayername = "Josef"
 	, lastReceivingPlayer = ""
   , deniedMsg = false
   , showInfo = true
@@ -339,5 +339,29 @@ function sendUdpMsg(playerIP, msg){
   c.send(m, 0, m.length, 1234, playerIP, function(err, bytes) {
     c.close();
   });
+} 
+
+function sendStartGameResponse(playerIP, msg){
+  
+  var stopSendingMsg = 0;
+  
+  var interval = setInterval(function(){
+    
+    var m = new Buffer(String("mmtships:" + msg));
+    var c = dgram.createSocket("udp4");
+
+    if(stopSendingMsg >= 20000){
+        clearInterval(interval);
+        return;
+    }
+    
+    c.send(m, 0, m.length, 1234, playerIP, function(err, bytes) {
+      c.close();
+    });
+    
+    stopSendingMsg += 2000;
+    
+  }, 2000);
+  
 } 
 
