@@ -31,7 +31,8 @@ var app = require('http').createServer(handler)
   , players = []
   , dgram = require('dgram')
   , connectionQuerySent = false
-  , myPlayername = "ShipNeutralizers"
+  , myPlayername = "Babsi"
+	, lastReceivingPlayer = ""
   , showInfo = true
   , id = 0
   , lastId = 0
@@ -166,9 +167,9 @@ function createMessageSocket(playerSocket){
         showInfo = false;
 	  }
 	  // waiting or playing: we are sending a message in this form mmtships:shipNeutrilaizers:status
-	  else if( tmp_msg[2] != "startgame"  &&  myPlayername != tmp_msg[1] ){
+	  else if( lastReceivingPlayer != rinfo.adress && tmp_msg[2] != "startgame"  &&  myPlayername != tmp_msg[1] ){
 	  		sendPlayingMsg( rinfo.address, status); 
-			
+				lastReceivingPlayer = rinfo.adress;
 	  }
     
     // in playing mode: check messages from right player
