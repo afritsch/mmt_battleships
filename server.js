@@ -163,7 +163,10 @@ function createMessageSocket(playerSocket){
 	  }
 	  
     else if( tmp_msg[2] == "startgame" && status == "waiting" && showInfo ){// waiting: we got message in this form mmtships:Playname:startgame
-		  	sendMePlayRequest(playerSocket, tmp_msg[1]);
+		  	if(!isPlayerListed)
+          players.push( { playername: tmp_msg[1], playerIP: rinfo.address } );
+          
+        sendMePlayRequest(playerSocket, tmp_msg[1]);
         showInfo = false;
 	  }
 	  // waiting or playing: we are sending a message in this form mmtships:shipNeutrilaizers:status
@@ -191,8 +194,8 @@ function createMessageSocket(playerSocket){
         sendUdpMsg( players.findPlayerIP( chosenPlayer ), "positionsset" );
         
       }
-      else
-        deniedMsg = true;
+      
+      deniedMsg = true;
       
       
     }
@@ -287,15 +290,16 @@ function sendPlayingMsg(playerIP, connectionAnswer, recursive){
       
       var m = new Buffer(String("mmtships:"+myPlayername+":"+connectionAnswer));
       var c = dgram.createSocket("udp4");
-
-      c.send(m, 0, m.length, 1234, playerIP, function(err, bytes) {
-        c.close();
-      });
       
       if(stopSendingMsg >= 30000 || deniedMsg){
         clearInterval(interval);
         deniedMsg = false;
+        return;
       }
+      
+      c.send(m, 0, m.length, 1234, playerIP, function(err, bytes) {
+        c.close();
+      });
       
       stopSendingMsg += 5000;
       
