@@ -35,6 +35,7 @@ var app = require('http').createServer(handler)
 	, lastReceivingPlayer = ""
   , nextCommand = false
   , showInfo = true
+  , gotInvitation
   , id = 0
   , lastId = 0
   , status = "waiting"
@@ -95,9 +96,11 @@ io.sockets.on('connection', function (socket) {
         
       if(parseMsg(data)[1] == "accepted"){
         status = "playing";
+        gotInvitation = false;
         startGameTimeout();
+        sendMessage(playerIP, "accepted", true, timeout, 2000, nextCommand, true);
+        sendMessage(playerIP, "positionsset:"+id, true, timeout, 2000, nextCommand, true);
         sendMessage(playerIP, "alive", true, timeout, 2000, stopSendAliveMsg, true); //sendAliveMessage
-        sendMessage(playerIP, "positionset:"+id, true, timeout, 2000, nextCommand, true);
       }
     }
     else if( parseMsg(data)[0] == "showInfoAgain")
@@ -146,20 +149,24 @@ function createMessageSocket(playerSocket){
     
     // playing: we got a message in this form mmtships:accecpted or mmtships:declined
     else if( (tmp_msg[1] == "accepted" || tmp_msg[1] == "declined") && status == "waiting" ){
-      
       if(tmp_msg[1] == "accepted"){
+        gotInvitation = true;
         status = "playing";
         startGameTimeout();
+        sendMessage(players.findPlayerIP( chosenPlayer ), "positionsset:"+id, true, timeout, 2000, nextCommand, true);
         sendMessage(players.findPlayerIP( chosenPlayer ), "alive", true, timeout, 2000, stopSendAliveMsg, true);
-        sendMessage(players.findPlayerIP( chosenPlayer ), "accepted", true, timeout, 2000, nextCommand, true);
-        sendMessage(players.findPlayerIP( chosenPlayer ), "positionset:"+id, true, timeout, 2000, nextCommand, true);
       }
     }
-    
+    else if( tmp_msg[1] == "okyourturn" && status == "playing"){
+      nextCommand = true;
+      id++;
+      //now client should be able to shot
+    }
     // playing: we got a message in this form mmtships:positionsset:id
     else if( tmp_msg[1] == "positionsset" && status == "playing" ){
-      
-      
+      if(gotInvitation)
+        sendMessage(players.findPlayerIP( chosenPlayer ), "okyourturn", true, timeout, 2000, nextCommand, true);
+
     }
     
     // playing: we got a message in this form mmtships:shot:x:y:id
@@ -217,7 +224,7 @@ function startGameTimeout(){
 		stopSendAliveMsg = true;
 	}
 	else{
-		setTimeout(startConnectionTimeout, 1000);
+		setTimeout(startGameTimeout, 1000);
 		timeout -= 1000;
 	}
 }
