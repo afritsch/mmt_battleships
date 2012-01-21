@@ -33,6 +33,7 @@ var app = require('http').createServer(handler)
   , connectionQuerySent = false
   , myPlayername = "Babsi"
 	, lastReceivingPlayer = ""
+  , deniedMsg = false
   , showInfo = true
   , id = 0
   , lastId = 0
@@ -190,6 +191,9 @@ function createMessageSocket(playerSocket){
         sendUdpMsg( players.findPlayerIP( chosenPlayer ), "positionsset" );
         
       }
+      else
+        deniedMsg = true;
+      
       
     }
     
@@ -288,8 +292,10 @@ function sendPlayingMsg(playerIP, connectionAnswer, recursive){
         c.close();
       });
       
-      if(stopSendingMsg >= 30000)
+      if(stopSendingMsg >= 30000 || deniedMsg){
         clearInterval(interval);
+        deniedMsg = false;
+      }
       
       stopSendingMsg += 5000;
       
