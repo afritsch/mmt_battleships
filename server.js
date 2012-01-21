@@ -31,7 +31,7 @@ var app = require('http').createServer(handler)
   , players = []
   , dgram = require('dgram')
   , connectionQuerySent = false
-  , myPlayername = "Babsi"
+  , myPlayername = "Josef"
 	, lastReceivingPlayer = ""
   , showInfo = true
   , id = 0
@@ -97,7 +97,13 @@ io.sockets.on('connection', function (socket) {
     }
     else if( parseMsg(data)[1] == "accepted" || parseMsg(data)[1] == "declined" ){ // start game with foreign player 
         message = new Buffer("mmtships:"+parseMsg(data)[1]); 
-      
+        
+        var c = dgram.createSocket("udp4");
+
+        c.send(message, 0, message.length, 1234, playerIP, function(err, bytes) {
+          c.close();
+        });
+        
       if(parseMsg(data)[1] == "accepted"){
         status = "playing";
         startConnectionTimeout();
@@ -108,13 +114,6 @@ io.sockets.on('connection', function (socket) {
     }
     else if( parseMsg(data)[0] == "showInfoAgain")
       showInfo = true;
-    
-    
-    client.send(message, 0, message.length, 1234, playerIP, function(err, bytes) {
-      client.close();
-    });
-    
-    
     
     
     console.log("message sent: "+message+" to: "+playerIP);
@@ -191,8 +190,6 @@ function createMessageSocket(playerSocket){
         sendUdpMsg( players.findPlayerIP( chosenPlayer ), "positionsset" );
         
       }
-      
-      //playerSocket.emit('playerSocket', String(chosenPlayer+","+response)); 
       
     }
     
@@ -290,7 +287,7 @@ function sendPlayingMsg(playerIP, connectionAnswer, recursive){
       c.send(m, 0, m.length, 1234, playerIP, function(err, bytes) {
         c.close();
       });
-    
+      
       if(stopSendingMsg >= 30000)
         clearInterval(interval);
       
