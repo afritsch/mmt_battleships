@@ -13,7 +13,11 @@
 </script>
 <script src="../socket.io/socket.io.js"></script>
 <script type="text/javascript">
+
+  window.onload = disableLinks;
+  
 	var playerlist = document.getElementById("playerlist");
+  var hrefArray = [];
 	var socket = io.connect('http://localhost', '3001');
 	
 	// method that is called when data is coming form the server
@@ -27,18 +31,49 @@
     else if(playqueries[1] == "accept"){
       // build up game area
     } 
-    else if( playqueries[1] == "declined"){
+    else if( playqueries[1] == "declined" ){
       alert("Player "+ playqueries[0] + " hat abgelehnt.");
+    }
+    else if( playqueries[1] == "myturn" ){
+ 
+      alert("Player " + playqueries[0] + " lasst dir den Vortritt! Du darfst beginnen");
+      enableLinks();
     }
     else if( playqueries[0] == "shot" ){
       
       // an server schicken miss or hit
       // an spiel x und y weiterleiten
     }
-    
-    
+    else if( playqueries[0] == "hit" ){
+      enableLinks();
+    }
+    else if( playqueries[0] == "miss" )
+      alert("Du hast leider nicht getroffen!");
+      disableLinks();
 	});
+  
+  function sendShot(x, y){
+    socket.emit('myGameSocket', playername + ",shot," + x + "," + y );
+    disableLinks();
+  }
+  
+  function disableLinks(){
+    for(var i=0; i < document.links.length; i++){
+      
+      if(hrefArray.length != document.links.length)
+        hrefArray.push( document.links[i].href );
+      
+      document.links[i].href = "#";
+    }
+  }
 	
+  function enableLinks(){
+    for(var i=0; i < document.links.length; i++){
+   
+      document.links[i].href = hrefArray[i];
+    }
+  }
+  
 	function showPlayRequest(playername){
 		var play = confirm("Spieler " + playername + " möchte spielen");
 		
@@ -349,8 +384,8 @@
 	imagePreload();
 	player = setupPlayer(false);
 	computer = setupPlayer(true);
-	document.write("<center><table bgcolor=#000000><tr><td align=center><p class='heading'>COMPUTER FLOTTE</p></td>"+
-	"<td align=center><p class='heading'>SPIELER FLOTTE</p></td></tr><tr><td>");
+	document.write("<center><table bgcolor=#000000><tr><td align=center><p class='heading'>GEGNER FLOTTE</p></td>"+
+	"<td align=center><p class='heading'>MEINE FLOTTE</p></td></tr><tr><td>");
 	showGrid(true);
 	document.write("</td><td>");
 	showGrid(false);

@@ -3,12 +3,11 @@
 
 var dgram = require('dgram');
 
-var message = new Buffer("mmtships:{Weihnachtsmann}");
+var message = new Buffer("mmtships:Weihnachtsmann:startgame");
 
 var client = dgram.createSocket("udp4");
 
-// localhost must not be changed when testing local otherwise udp paket won't reach target socket
-
-client.send(message, 0, message.length, 1234, "78.104.171.255", function(err, bytes) {
+client.send(message, 0, message.length, 1234, "localhost", function(err, bytes) {
   client.close();
 });
+
