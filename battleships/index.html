@@ -27,7 +27,7 @@
     <script type="text/javascript">
       window.onload = disableLinks;
 
-      var playerlist = document.getElementById("playerlist");
+      var playerlist = document.getElementById('playerlist');
       var hrefArray = [];
       var socket = io.connect('http://localhost', '3001');
 
@@ -37,27 +37,27 @@
         var playqueries;
         isPlayerList(data) ? parsePlayerList(data) : playqueries = parseMessages(data);
 
-        if(playqueries[1] == "startgame") showPlayRequest(playqueries[0]);
-        else if(playqueries[1] == "accept") {
+        if(playqueries[1] == 'startgame') showPlayRequest(playqueries[0]);
+        else if(playqueries[1] == 'accept') {
           // build up game area
-        } else if(playqueries[1] == "declined") {
-          alert("Player " + playqueries[0] + " hat abgelehnt.");
-        } else if(playqueries[1] == "myturn") {
+        } else if(playqueries[1] == 'declined') {
+          alert('Player ' + playqueries[0] + ' hat abgelehnt.');
+        } else if(playqueries[1] == 'myturn') {
 
-          alert("Player " + playqueries[0] + " lasst dir den Vortritt! Du darfst beginnen");
+          alert('Player ' + playqueries[0] + ' lasst dir den Vortritt! Du darfst beginnen');
           enableLinks();
-        } else if(playqueries[0] == "shot") {
+        } else if(playqueries[0] == 'shot') {
 
           // an server schicken miss or hit
           // an spiel x und y weiterleiten
-        } else if(playqueries[0] == "hit") {
+        } else if(playqueries[0] == 'hit') {
           enableLinks();
-        } else if(playqueries[0] == "miss") alert("Du hast leider nicht getroffen!");
+        } else if(playqueries[0] == 'miss') alert('Du hast leider nicht getroffen!');
         disableLinks();
       });
 
       function sendShot(x, y) {
-        socket.emit('myGameSocket', playername + ",shot," + x + "," + y);
+        socket.emit('myGameSocket', playername + ',shot,' + x + ',' + y);
         disableLinks();
       }
 
@@ -66,7 +66,7 @@
 
           if(hrefArray.length != document.links.length) hrefArray.push(document.links[i].href);
 
-          document.links[i].href = "#";
+          document.links[i].href = '#';
         }
       }
 
@@ -78,36 +78,36 @@
       }
 
       function showPlayRequest(playername) {
-        var play = confirm("Spieler " + playername + " möchte spielen");
+        var play = confirm('Spieler ' + playername + ' möchte spielen');
 
-        if(play) socket.emit('myGameSocket', playername + ":accepted");
-        else socket.emit('myGameSocket', playername + ":declined");
+        if(play) socket.emit('myGameSocket', playername + ':accepted');
+        else socket.emit('myGameSocket', playername + ':declined');
 
-        socket.emit('myGameSocket', "showInfoAgain");
+        socket.emit('myGameSocket', 'showInfoAgain');
       }
 
       function isPlayerList(data) {
-        return String(data).indexOf("PLIST:") != -1;
+        return String(data).indexOf('PLIST:') != -1;
       }
 
       function sendPlayQuery(playername) {
-        socket.emit('myGameSocket', playername + ":startgame");
+        socket.emit('myGameSocket', playername + ':startgame');
       }
 
       function parsePlayerList(data) {
         // PLIST: Joe, Barbara, AndY
-        var tmp_playernames = String(data).slice(6).split("#");
+        var tmp_playernames = String(data).slice(6).split('#');
 
-        playerlist.style.display = "inline";
-        playerlist.innerHTML = "";
+        playerlist.style.display = 'inline';
+        playerlist.innerHTML = '';
         for(var i = 0; i < tmp_playernames.length - 1; i++) {
           playerlist.
-          innerHTML += "<p><b>" + tmp_playernames[i] + "</b> <input type='button' value='spielen' onClick='sendPlayQuery(" + "\"" + tmp_playernames[i] + "\"" + "); playerlist.style.display = \"none\" ' /></p>"; // add new player to list
+          innerHTML += '<p><b>' + tmp_playernames[i] + "</b> <input type='button' value='spielen' onClick='sendPlayQuery(" + "\"" + tmp_playernames[i] + "\"" + "); playerlist.style.display = \"none\" ' /></p>"; // add new player to list
         }
       }
 
       function parseMessages(data) {
-        return String(data).split(",");
+        return String(data).split(',');
       }
     </script>
     <script type="text/javascript">
@@ -148,10 +148,10 @@
       /* Information used to describe ships
        */
       var shiptypes = [
-        ["en Minensucher", 2, 4],
-        ["e Fregatte", 3, 3],
-        ["en Kreuzer", 4, 2],
-        [" Kriegsschiff", 5, 1]
+        ['en Minensucher', 2, 4],
+        ['e Fregatte', 3, 3],
+        ['en Kreuzer', 4, 2],
+        [' Kriegsschiff', 5, 1]
       ];
 
       var gridx = 10,
@@ -163,7 +163,7 @@
       var playerlives = 0,
         computerlives = 0,
         playflag = true,
-        statusmsg = "";
+        statusmsg = '';
 
       /* Function to preload all the images, to prevent delays during play
        */
@@ -171,14 +171,14 @@
 
       function imagePreload() {
         var i, ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 100, 101, 102, 103, 201, 202, 203, 204, 205, 206];
-        window.status = "Lade Bilder...bitte warten";
+        window.status = 'Lade Bilder...bitte warten';
         for(i = 0; i < ids.length; ++i) {
           var img = new Image,
-            name = "http://andyf.multimediatechnology.at/schiffe/batt" + ids[i] + ".gif";
+            name = 'http://andyf.multimediatechnology.at/schiffe/batt' + ids[i] + '.gif';
           img.src = name;
           preloaded[i] = img;
         }
-        window.status = "";
+        window.status = '';
       }
 
       /* Function to place the ships in the grid
@@ -253,10 +253,10 @@
       function setImage(y, x, id, ispc) {
         if(ispc) {
           computer[y][x][0] = id;
-          document.images["pc" + y + "_" + x].src = "http://andyf.multimediatechnology.at/schiffe/batt" + id + ".gif";
+          document.images['pc' + y + '_' + x].src = 'http://andyf.multimediatechnology.at/schiffe/batt' + id + '.gif';
         } else {
           player[y][x][0] = id;
-          document.images["ply" + y + "_" + x].src = "http://andyf.multimediatechnology.at/schiffe/batt" + id + ".gif";
+          document.images['ply' + y + '_' + x].src = 'http://andyf.multimediatechnology.at/schiffe/batt' + id + '.gif';
         }
       }
 
@@ -282,10 +282,10 @@
             var shipno = computer[y][x][1];
             if(--computersships[shipno][1] == 0) {
               sinkShip(computer, shipno, true);
-              alert("Glueckwunsch! Der SPIELER haben ein" + shiptypes[computersships[shipno][0]][0] + " versenkt!");
+              alert('Glueckwunsch! Der SPIELER haben ein' + shiptypes[computersships[shipno][0]][0] + ' versenkt!');
               updateStatus();
               if(--computerlives == 0) {
-                alert("HERZLICHEN GLUECKWUNSCH!!! DER SPIELER HAT GEWONNEN!!!");
+                alert('HERZLICHEN GLUECKWUNSCH!!! DER SPIELER HAT GEWONNEN!!!');
                 playflag = false;
               }
             }
@@ -378,10 +378,10 @@
           var shipno = player[sy][sx][1];
           if(--playersships[shipno][1] == 0) {
             sinkShip(player, shipno, false);
-            alert("COMPUTER hat ein" + shiptypes[playersships[shipno][0]][0] + " versenkt!");
+            alert('COMPUTER hat ein' + shiptypes[playersships[shipno][0]][0] + ' versenkt!');
             if(--playerlives == 0) {
               knowYourEnemy();
-              alert("COMPUTER hat gewonnen!");
+              alert('COMPUTER hat gewonnen!');
               playflag = false;
             }
           }
@@ -420,15 +420,15 @@
        */
       function updateStatus() {
         var f = false,
-          i, s = "Computer hat ein";
+          i, s = 'Computer hat ein';
         for(i = 0; i < computersships.length; ++i) {
           if(computersships[i][1] > 0) {
-            if(f) s = s + ", ein";
+            if(f) s = s + ', ein';
             else f = true;
             s = s + shiptypes[computersships[i][0]][0];
           }
         }
-        if(!f) s = s + "nothing left, thanks to you!";
+        if(!f) s = s + 'nothing left, thanks to you!';
         statusmsg = s;
         window.status = statusmsg;
       }
@@ -443,10 +443,10 @@
       computer = setupPlayer(true);
       document.write("<center><table bgcolor=#000000><tr><td align=center><p class='heading'>GEGNER FLOTTE</p></td>" + "<td align=center><p class='heading'>MEINE FLOTTE</p></td></tr><tr><td>");
       showGrid(true);
-      document.write("</td><td>");
+      document.write('</td><td>');
       showGrid(false);
       updateStatus();
-      setInterval("setStatus();", 500);
+      setInterval('setStatus();', 500);
     </script>
   </head>
   
