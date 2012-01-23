@@ -28,7 +28,7 @@ var app = require('http').createServer(handler),
   fs = require('fs'),
   players = [],
   dgram = require('dgram'),
-  myPlayername = 'Josef',
+  myPlayername = 'ShipNeutralizers',
   broadcastSent = false,
   lastReceivingPlayer = '',
   nextCommand = false,
@@ -40,8 +40,8 @@ var app = require('http').createServer(handler),
   stopSendAliveMsg = false,
   timeout = 20000,
   chosenPlayer = '',
-  broadcastAddress = 'localhost', //'78.104.171.255';
-  sendPort = '4321',
+  broadcastAddress = '78.104.171.255', //'localhost';
+  sendPort = '1243',
   receivePort = '1234';
 
 app.listen(3001);
@@ -68,7 +68,7 @@ io.sockets.on('connection', function (socket) {
   console.log('is Connected');
 
   if(!broadcastSent) { // when socket is created a udp paket is being sent -> mmtships:{Playername} 
-    sendMessage(broadcastAddress, myPlayername, true, 99999999999, 5000, status, 'playing') // our query to get attraction and listed -> mmtships:{PlayerName}
+    sendMessage(broadcastAddress, myPlayername, true, 99999, 5000, status, 'playing') // our query to get attraction and listed -> mmtships:{PlayerName}
     createMessageSocket(socket); // socket for getting messages
     broadcastSent = true;
   }
@@ -256,7 +256,8 @@ function sendMessage(IP, message, recursive, timeout, frequency, stopper, value)
         nextCommand = false;
         return;
       }
-
+      
+      //console.log(m + ' ' +m.length); 
       c.send(m, 0, m.length, sendPort, IP, function (err, bytes) {
         c.close();
       });
