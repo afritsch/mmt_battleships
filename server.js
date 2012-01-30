@@ -30,12 +30,14 @@ var app = require('http').createServer(handler)
   , fs = require('fs')
   , players = []
   , dgram = require('dgram')
-  , myPlayername = "Josef"
+  , myPlayername = "Basi"
   , broadcastSent = false
 	, lastReceivingPlayer = ""
   , nextCommand = false
+  , gameStarted = false
   , showInfo = true
   , gotInvitation = false
+  , startGameSent = false
   , id = 0
   , lastId = 0
   , status = "waiting"
@@ -43,10 +45,10 @@ var app = require('http').createServer(handler)
   , timeout = 20000
   , chosenPlayer = ""
   , broadcastAddress = "localhost"//"78.104.171.255";
-  , sendPort = "4321"
-  , receivePort = "1234";
+  , sendPort = "1234"
+  , receivePort = "4321";
   
-app.listen(3001);
+app.listen(3002);
 
 // the server itself just renders client.html and nothing else
 function handler (req, res) {
@@ -90,19 +92,22 @@ io.sockets.on('connection', function (socket) {
     if( parseMsg(data)[1] == "startgame" ){ // start game with foreign player 
         consoleMessage = new Buffer(myPlayername+":startgame"); // 
         chosenPlayer = parseMsg(data)[0]; // save temporarily playername to play with
-        sendMessage(playerIP, myPlayername+":startgame", true, 30000, 2000, nextCommand, true);
+        sendMessage(playerIP, myPlayername+":startgame", true, 30000, 2000, startGameSent, true);
     }
     else if( parseMsg(data)[1] == "accepted" || parseMsg(data)[1] == "declined" ){ // start game with foreign player 
       consoleMessage = new Buffer(parseMsg(data)[1]); 
-      sendMessage(playerIP, parseMsg(data)[1], true, timeout, 2000, nextCommand, true);
-        
+      
       if(parseMsg(data)[1] == "accepted"){
+        sendMessage(playerIP, parseMsg(data)[1], true, timeout, 2000, nextCommand, true);
         status = "playing";
         startGameTimeout();
-        sendMessage(playerIP, "positionsset:"+id, true, timeout, 2000, nextCommand, true);
-        id++;
+        //sendMessage(playerIP, "positionsset:"+id, true, timeout, 2000, nextCommand, true);
+        //id++;
         sendMessage(playerIP, "alive", true, timeout, 2000, stopSendAliveMsg, true); //sendAliveMessage
       }
+      else
+        sendMessage(playerIP, parseMsg(data)[1], true, 6000, 2000, false, true); // send declined
+        
     }
     else if( parseMsg(data)[0] == "showInfoAgain")
       showInfo = true;
@@ -125,15 +130,17 @@ function createMessageSocket(playerSocket){
    
 	  var tmp_msg = parseMsg(msg); // returns array -> mmtships:{PlayerName}:{SpielerStatus} parsed 1.elem mmtships   2.elem PlayerName ...	  
 	   console.log("tmp_msg[1]:"+tmp_msg[1]+" status: "+status);
-	  if( tmp_msg.length == 2 && !isPlayerListed(rinfo.address) && status == "waiting" && myPlayername != tmp_msg[1] ){	// waiting: we got message in this form mmtships:Playername 
+     
+	  if( tmp_msg.length == 2 && !isPlayerListed(rinfo.address) && status == "waiting" && myPlayername != tmp_msg[1] && !gameStarted ){	// waiting: we got message in this form mmtships:Playername 
 	  		players.push( { playername : tmp_msg[1], playerIP : rinfo.address } ); 
 	  		sendPlayerList(playerSocket); 
 	  }
 	  
-    else if( tmp_msg[2] == "startgame" && status == "waiting" && showInfo ){// waiting: we got message in this form mmtships:Playname:startgame
+    else if( tmp_msg[2] == "startgame" && status == "waiting" && showInfo && !gameStarted ){// waiting: we got message in this form mmtships:Playname:startgame
 		  	if(!isPlayerListed(rinfo.address))
           players.push( { playername: tmp_msg[1], playerIP: rinfo.address } );
         
+        chosenPlayer = tmp_msg[1];
         sendMePlayRequest(playerSocket, tmp_msg[1]);
         showInfo = false;
         gotInvitation = true;
@@ -142,36 +149,28 @@ function createMessageSocket(playerSocket){
 	  else if( lastReceivingPlayer != rinfo.adress && tmp_msg[2] != "startgame"  &&  myPlayername != tmp_msg[1] ){
 	  		sendMessage(rinfo.address, status, false); 
 				lastReceivingPlayer = rinfo.adress;
-        stopSendAliveMsg = true;
 	  }
     
-    // in playing mode: check messages from right player
-    if( rinfo.address != players.findPlayerIP( chosenPlayer ) )
-      return;
+    // at this point I play with other
     
-    
-    if( tmp_msg[1] == "alive" && status == "playing" ){ // playing: we got a message in this form mmtships:alive
+    if( tmp_msg[1] == "alive" && status == "playing" && gameStarted ){ // playing: we got a message in this form mmtships:alive
 			timeout = 20000;
 	  }
     
-    if( tmp_msg[1] == "positionsset" && status == "playing" ){
+    if( tmp_msg[1] == "positionsset" && status == "playing" && !gameStarted ){
        console.log("got positionsset");
       nextCommand = true;
-      if( Number(tmp_msg[2]) == 0 ){
-        id = Number(tmp_msg[2]) + 1;
-        sendMessage(players.findPlayerIP( chosenPlayer ), "positionsset:"+id, true, timeout, 2000, nextCommand, false);
-      }
-      if(gotInvitation){
-        console.log("gotInvitation: "+gotInvitation);
-        id = Number(tmp_msg[2]) + 1;
-        console.log("okyourturn: "+id+" sent");
-        sendMessage(players.findPlayerIP( chosenPlayer ), "okyourturn:"+id, true, timeout, 2000, nextCommand, false);
-      }
       
+      id = Number(tmp_msg[2]) + 1;
+      console.log("okyourturn: "+id+" sent");
+      sendMessage(players.findPlayerIP( chosenPlayer ), "okyourturn:"+id, true, timeout, 2000, nextCommand, false);
     }
     
     // playing: we got a message in this form mmtships:accecpted or mmtships:declined
-    else if( (tmp_msg[1] == "accepted" || tmp_msg[1] == "declined") && status == "waiting" ){
+    else if( (tmp_msg[1] == "accepted" || tmp_msg[1] == "declined") && status == "waiting" && !gameStarted ){
+    console.log("accepted or declined got");
+      startGameSent = true;
+      
       if(tmp_msg[1] == "accepted"){
         gotInvitation = false;
         status = "playing";
@@ -179,28 +178,33 @@ function createMessageSocket(playerSocket){
         sendMessage(players.findPlayerIP( chosenPlayer ), "positionsset:"+id, true, timeout, 2000, nextCommand, true);
         sendMessage(players.findPlayerIP( chosenPlayer ), "alive", true, timeout, 2000, stopSendAliveMsg, true);
       }
+      else{
+        console.log("declined got");
+        playerSocket.emit('playerSocket', chosenPlayer + ",declined");
+        }
     }
-    else if( tmp_msg[1] == "okyourturn" && status == "playing"){
+    else if( tmp_msg[1] == "okyourturn" && status == "playing" && !gameStarted ){
+      gameStarted = true;
       nextCommand = false;
       id = Number(tmp_msg[2]) + 1;
-      playerSocket.emit('playerSocket', players.findPlayerIP( chosenPlayer ) + ",myturn");
+      playerSocket.emit('playerSocket', chosenPlayer + ",myturn");
     }
     // playing: we got a message in this form mmtships:positionsset:id
     
     // playing: we got a message in this form mmtships:shot:x:y:id
-    else if ( tmp_msg[1] == "shot" && status == "playing" ){
+    else if ( tmp_msg[1] == "shot" && status == "playing" && !gameStarted ){
       nextCommand = false;
       playerSocket.emit('playerSocket', "shot,"+tmp_msg[2]+","+tmp_msg[3]);
       id = Number(tmp_msg[4]) + 1;
     }
     
     // playing: we got a message in this form mmtships:hit:id
-    else if( tmp_msg[1] == "hit" && status == "playing" ){
+    else if( tmp_msg[1] == "hit" && status == "playing" && !gameStarted ){
       id = Number(tmp_msg[2]) + 1;
       
     }
     // playing: we got a message in this form mmtships:miss:id
-    else if( tmp_msg[1] == "miss" && status == "playing" ){
+    else if( tmp_msg[1] == "miss" && status == "playing" && !gameStarted ){
       id = Number(tmp_msg[2]) + 1;
       
     }
@@ -243,6 +247,9 @@ function startGameTimeout(){
 		status = "waiting";
 		timeout = 20000;
 		stopSendAliveMsg = true;
+    gameStarted = false;
+    startGameSent = false;
+    id = 0;
 	}
 	else{
 		setTimeout(startGameTimeout, 1000);
