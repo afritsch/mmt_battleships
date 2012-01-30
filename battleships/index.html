@@ -19,6 +19,7 @@
 	var socket = io.connect('http://localhost', '3001');
 	var disableLinks = true;
   var currentShot = { x: 0, y: 0};
+  var currentEnemy = "";
   
 	// method that is called when data is coming form the server
 	socket.on('playerSocket', function (data) {
@@ -46,11 +47,11 @@
     }
     else if( playqueries[0] == "shot" ){
       if(player[playerqueries[1]][playerqueries[2]][0] < 100){
-        socket.emit('myGameSocket', playername+":hit");
+        socket.emit('myGameSocket', currentEnemy+":hit");
         setImage(currentShot.x, currentShot.y, 103, true);
       }
       else{
-        socket.emit('myGameSocket', playername+":miss");
+        socket.emit('myGameSocket', currentEnemy+":miss");
         setImage(currentShot.x, currentShot.y, 102, true);
       }
     }
@@ -66,8 +67,10 @@
 	function showPlayRequest(playername){
 		var play = confirm("Spieler " + playername + " möchte spielen");
 		
-		if(play)
+		if(play){
 			socket.emit('myGameSocket', playername+":accepted");
+      currentEnemy = playername;
+    }
 		else
 			socket.emit('myGameSocket', playername+":declined");
 		
@@ -80,6 +83,7 @@
 	
 	function sendPlayQuery(playername){
 	  	socket.emit('myGameSocket', playername+":startgame");
+      currentEnemy = playername;
 	}
 	
 	function parsePlayerList(data){
@@ -135,9 +139,9 @@
       return;
     
     currentShot.x = x;
-    currentshot.y = y;
+    currentShot.y = y;
     
-    socket.emit('myGameSocket', playername+":shot:"+x+":"+y);
+    socket.emit('myGameSocket', currentEnemy+":shot:"+x+":"+y);
     
     /*if ( playflag ) {
       if (computer[y][x][0] < 100) {
