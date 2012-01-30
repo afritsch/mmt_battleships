@@ -41,7 +41,7 @@ var app = require('http').createServer(handler)
   , startGameSent = false
   , id = 0
   , lastId = 0
-  , status = "waiting"
+  , status = Object("waiting")
   , stopSendAliveMsg = false
   , timeout = 20000
   , chosenPlayer = ""
@@ -50,7 +50,6 @@ var app = require('http').createServer(handler)
   , receivePort = "1234";
   
 app.listen(3001);
-
 
 // the server itself just renders client.html and nothing else
 function handler(req, res) {
@@ -94,7 +93,7 @@ io.sockets.on('connection', function (socket) {
       
       if(parseMsg(data)[1] == "accepted"){
         sendMessage(playerIP, parseMsg(data)[1], true, timeout, 2000, nextCommand, true);
-        status = "playing";
+        status = Object("playing");
 				gameStarted = true;
         startGameTimeout();
         sendMessage(playerIP, "alive", true, 1800000, 2000, stopSendAliveMsg, true); //sendAliveMessage
@@ -127,10 +126,16 @@ function createMessageSocket(playerSocket) {
   // message socket for listening 
 
   mSocket.on("message", function (msg, rinfo) {
-    console.log("got message: " + msg + " from " + rinfo.address + ":" + rinfo.port);
    
 	  var tmp_msg = parseMsg(msg); // returns array -> mmtships:{PlayerName}:{SpielerStatus} parsed 1.elem mmtships   2.elem PlayerName ...	  
-     
+    
+    // all messages with id less than the id we sent we ignore
+    if( (tmp_msg[2] > id || tmp_msg[4] > id) && gameStarted )
+      return;
+      
+    console.log("got message: " + msg + " from " + rinfo.address + ":" + rinfo.port);
+    
+    
 	  if( tmp_msg.length == 2 && !isPlayerListed(rinfo.address) && status == "waiting" && myPlayername != tmp_msg[1] && !gameStarted ){	// waiting: we got message in this form mmtships:Playername 
 	  		players.push( { playername : tmp_msg[1], playerIP : rinfo.address } ); 
 	  		sendPlayerList(playerSocket); 
@@ -169,7 +174,7 @@ function createMessageSocket(playerSocket) {
       
       if(tmp_msg[1] == "accepted"){
         gotInvitation = false;
-        status = 'playing';
+        status = Object("playing");
         startGameTimeout();
         sendMessage(players.findPlayerIP(chosenPlayer), 'positionsset:' + id, true, timeout, 2000, nextCommand, true);
         sendMessage(players.findPlayerIP(chosenPlayer), 'alive', true, timeout, 2000, stopSendAliveMsg, true);
@@ -207,9 +212,6 @@ function createMessageSocket(playerSocket) {
       gotMissedOrHit = true;
       playerSocket.emit('playerSocket', 'miss');
     }
-    
-    console.log("gameStarted:"+gameStarted + " gotMissedOrHit: "+gotMissedOrHit);
-
   });
   mSocket.bind(receivePort);
 }
@@ -243,7 +245,7 @@ function sendMePlayRequest(s, playername) {
 
 function startGameTimeout(){
 	if( timeout <= 0 ){
-		status = "waiting";
+		status = Object("waiting");
 		timeout = 20000;
 		stopSendAliveMsg = true;
     gameStarted = false;
