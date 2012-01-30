@@ -104,7 +104,7 @@ io.sockets.on('connection', function (socket) {
     else if( parseMsg(data)[1] == "shot"){
       stopSendingMissOrHit = true;
       gotMissedOrHit = false;
-      sendMessage(playerIP, "shot:" + parseMsg(data)[2] + ":" + parseMsg(data)[3], true, timeout, 2000, gotMissedOrHit, true);
+      sendMessage(playerIP, "shot:" + parseMsg(data)[2] + ":" + parseMsg(data)[3], true, timeout, 2000, gotMissedOrHit, true, id++);
       console.log("sent shot:" + parseMsg(data)[2] + ":" + parseMsg(data)[3]);
     }
     else if( parseMsg(data)[1] == "miss"){
@@ -129,8 +129,7 @@ function createMessageSocket(playerSocket) {
    
 	  var tmp_msg = parseMsg(msg); // returns array -> mmtships:{PlayerName}:{SpielerStatus} parsed 1.elem mmtships   2.elem PlayerName ...	  
     
-    // all messages with id less than the id we sent we ignore
-    if( (tmp_msg[2] > id || tmp_msg[4] > id) && gameStarted )
+    if( !(tmp_msg[2] > id || tmp_msg[4] > id) && tmp_msg[2] != undefined && tmp_msg[4] != undefined)
       return;
       
     console.log("got message: " + msg + " from " + rinfo.address + ":" + rinfo.port);
@@ -258,7 +257,7 @@ function startGameTimeout(){
 	}
 }
 
-function sendMessage(IP, message, recursive, timeout, frequency, stopper, value) {
+function sendMessage(IP, message, recursive, timeout, frequency, stopper, value, nextId) {
 
   if(recursive) {
     var stopSendingMessage = 0;
@@ -267,7 +266,7 @@ function sendMessage(IP, message, recursive, timeout, frequency, stopper, value)
       var m = new Buffer(String('mmtships:' + message));
       var c = dgram.createSocket('udp4');
 
-      if(stopSendingMessage >= timeout || stopper == value) {
+      if(stopSendingMessage >= timeout || stopper == value || id == nextId) {
         clearInterval(interval);
         nextCommand = false;
         return;
