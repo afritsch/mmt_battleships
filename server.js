@@ -1,30 +1,29 @@
 /*http server + websockets*/
-
 // Array methods added for later use
 Array.prototype.
-	eraseEmptyElements = function (){
-		
-		for(var i=0; i < this.length;i++){
-			if(!this[i]){
-				this.splice(i,1);
-				i--;
-			}
-		}
-		
-		return this;
-	}
+eraseEmptyElements = function () {
+
+  for(var i = 0; i < this.length; i++) {
+    if(!this[i]) {
+      this.splice(i, 1);
+      i--;
+    }
+  }
+
+  return this;
+}
 Array.prototype.
-		findPlayerIP = function(playername){
-		
-		for(var i=0; i < this.length;i++)
-			if(playername == this[i].playername)
-				return this[i].playerIP;
-		
-		return false;
-	}
-	
-	
+findPlayerIP = function (playername) {
+
+  for(var i = 0; i < this.length; i++)
+  if(playername == this[i].playername) return this[i].playerIP;
+
+  return false;
+}
+
+
 // vars set
+
 var app = require('http').createServer(handler)
   , io = require('socket.io').listen(app)
   , fs = require('fs')
@@ -50,12 +49,13 @@ var app = require('http').createServer(handler)
   
 app.listen(3002);
 
+
 // the server itself just renders client.html and nothing else
-function handler (req, res) {
+function handler(req, res) {
 
   fs.readFile(__dirname + '/battleships/index.html', function (err, data) {
-    
-    if (err) {
+
+    if(err) {
       res.writeHead(500);
       return res.end('Error loading index.html');
     }
@@ -67,27 +67,25 @@ function handler (req, res) {
 }
 
 // method that is called when socket in client.html is created
-
 io.sockets.on('connection', function (socket) {
-	
-  console.log("is Connected");
-  
-  if(!broadcastSent){ // when socket is created a udp paket is being sent -> mmtships:{Playername} 
-    sendMessage(broadcastAddress, myPlayername, true, 99999999999, 5000, status, "playing") // our query to get attraction and listed -> mmtships:{PlayerName}
+
+  console.log('is Connected');
+
+  if(!broadcastSent) { // when socket is created a udp paket is being sent -> mmtships:{Playername} 
+    sendMessage(broadcastAddress, myPlayername, true, 99999, 5000, status, 'playing') // our query to get attraction and listed -> mmtships:{PlayerName}
     createMessageSocket(socket); // socket for getting messages
     broadcastSent = true;
   }
- 
+
   // socket to communicate between html client and server
   // this method is always called when socket in client.html calls emit method
   // emit method is used by the server too to communicate with socket in client.html
   socket.on('myGameSocket', function (data) {
-  
-    var playerIP = players.findPlayerIP( parseMsg(data)[0] );
+
+    var playerIP = players.findPlayerIP(parseMsg(data)[0]);
     // socket to send messages to all registered players
-    var client = dgram.createSocket("udp4");
+    var client = dgram.createSocket('udp4');
     var consoleMessage;
-    
 
     if( parseMsg(data)[1] == "startgame" ){ // start game with foreign player 
         consoleMessage = new Buffer(myPlayername+":startgame"); // 
@@ -107,24 +105,19 @@ io.sockets.on('connection', function (socket) {
       }
       else
         sendMessage(playerIP, parseMsg(data)[1], true, 6000, 2000, false, true); // send declined
-        
+       
     }
-    else if( parseMsg(data)[0] == "showInfoAgain")
-      showInfo = true;
-      
-    else if( parseMsg(data)[1] == "shot" ){
-      sendMessage(playerIP, "shot:"+parseMsg(data)[2]+":"+parseMsg(data)[3]+":"+parseMsg(data)[4], true, timeout, 2000, nextCommand, true);
-    }
-    
-    console.log("message sent: mmtships:"+consoleMessage+" to: "+playerIP);
+
+    console.log('message sent: mmtships:' + consoleMessage + ' to: ' + playerIP);
   });
 });
 
-function createMessageSocket(playerSocket){
+function createMessageSocket(playerSocket) {
 
-  var mSocket = dgram.createSocket("udp4");
-  
+  var mSocket = dgram.createSocket('udp4');
+
   // message socket for listening 
+
   mSocket.on("message", function (msg, rinfo) {
     console.log("got message: " + msg + " from " + rinfo.address + ":" + rinfo.port);
    
@@ -165,19 +158,22 @@ function createMessageSocket(playerSocket){
       console.log("okyourturn: "+id+" sent");
       sendMessage(players.findPlayerIP( chosenPlayer ), "okyourturn:"+id, true, timeout, 2000, nextCommand, false);
     }
-    
+
     // playing: we got a message in this form mmtships:accecpted or mmtships:declined
+
     else if( (tmp_msg[1] == "accepted" || tmp_msg[1] == "declined") && status == "waiting" && !gameStarted ){
     console.log("accepted or declined got");
       startGameSent = true;
       
       if(tmp_msg[1] == "accepted"){
+
         gotInvitation = false;
-        status = "playing";
+        status = 'playing';
         startGameTimeout();
-        sendMessage(players.findPlayerIP( chosenPlayer ), "positionsset:"+id, true, timeout, 2000, nextCommand, true);
-        sendMessage(players.findPlayerIP( chosenPlayer ), "alive", true, timeout, 2000, stopSendAliveMsg, true);
+        sendMessage(players.findPlayerIP(chosenPlayer), 'positionsset:' + id, true, timeout, 2000, nextCommand, true);
+        sendMessage(players.findPlayerIP(chosenPlayer), 'alive', true, timeout, 2000, stopSendAliveMsg, true);
       }
+
       else{
         console.log("declined got");
         playerSocket.emit('playerSocket', chosenPlayer + ",declined");
@@ -189,57 +185,56 @@ function createMessageSocket(playerSocket){
       id = Number(tmp_msg[2]) + 1;
       playerSocket.emit('playerSocket', chosenPlayer + ",myturn");
     }
-    // playing: we got a message in this form mmtships:positionsset:id
     
     // playing: we got a message in this form mmtships:shot:x:y:id
-    else if ( tmp_msg[1] == "shot" && status == "playing" && !gameStarted ){
+
+    else if(tmp_msg[1] == 'shot' && status == 'playing' && gameStarted ) {
       nextCommand = false;
-      playerSocket.emit('playerSocket', "shot,"+tmp_msg[2]+","+tmp_msg[3]);
+      playerSocket.emit('playerSocket', 'shot,' + tmp_msg[2] + ',' + tmp_msg[3]);
       id = Number(tmp_msg[4]) + 1;
     }
-    
+
     // playing: we got a message in this form mmtships:hit:id
     else if( tmp_msg[1] == "hit" && status == "playing" && !gameStarted ){
       id = Number(tmp_msg[2]) + 1;
-      
+
     }
     // playing: we got a message in this form mmtships:miss:id
     else if( tmp_msg[1] == "miss" && status == "playing" && !gameStarted ){
       id = Number(tmp_msg[2]) + 1;
-      
+
     }
 
   });
   mSocket.bind(receivePort);
-  console.log("mSocketCreated");
+  console.log('mSocketCreated');
 }
 
-function parseMsg(m){
-  	return String(m).split(/[,:]/g).eraseEmptyElements(); // array -> 1.elem mmtships ...
+function parseMsg(m) {
+  return String(m).split(/[,:]/g).eraseEmptyElements(); // array -> 1.elem mmtships ...
 }
 
-function sendPlayerList(s){
-	
-	var tmp_playernames = "PLIST:";
-	
-	for(var i=0; i < players.length; i++)
-		tmp_playernames += players[i].playername + "#";
-	
-	console.log("PLIST sent: "+tmp_playernames);
-	s.emit('playerSocket', tmp_playernames); 
+function sendPlayerList(s) {
+
+  var tmp_playernames = 'PLIST:';
+
+  for(var i = 0; i < players.length; i++)
+  tmp_playernames += players[i].playername + '#';
+
+  console.log('PLIST sent: ' + tmp_playernames);
+  s.emit('playerSocket', tmp_playernames);
 }
 
-function isPlayerListed(playerIP){
-	
-	for(var i=0; i < players.length; i++)
-		if(playerIP == players[i].playerIP)
-			return true;
-			
-	return false;
+function isPlayerListed(playerIP) {
+
+  for(var i = 0; i < players.length; i++)
+  if(playerIP == players[i].playerIP) return true;
+
+  return false;
 }
 
-function sendMePlayRequest(s, playername){
-	s.emit('playerSocket', String(playername+",startgame")); 
+function sendMePlayRequest(s, playername) {
+  s.emit('playerSocket', String(playername + ',startgame'));
 }
 
 function startGameTimeout(){
@@ -257,36 +252,35 @@ function startGameTimeout(){
 	}
 }
 
-function sendMessage(IP, message, recursive, timeout, frequency, stopper, value){
-  
-  if(recursive){
+function sendMessage(IP, message, recursive, timeout, frequency, stopper, value) {
+
+  if(recursive) {
     var stopSendingMessage = 0;
-    var interval = setInterval(function(){
-    
-      var m = new Buffer(String("mmtships:"+message));
-      var c = dgram.createSocket("udp4");
-    
-      if(stopSendingMessage >= timeout || stopper == value){
+    var interval = setInterval(function () {
+
+      var m = new Buffer(String('mmtships:' + message));
+      var c = dgram.createSocket('udp4');
+
+      if(stopSendingMessage >= timeout || stopper == value) {
         clearInterval(interval);
         nextCommand = false;
         return;
       }
-
-      c.send(m, 0, m.length, sendPort, IP, function(err, bytes) {
+      
+      //console.log(m + ' ' +m.length); 
+      c.send(m, 0, m.length, sendPort, IP, function (err, bytes) {
         c.close();
       });
-      
+
       stopSendingMessage += frequency;
     }, frequency);
-  }
-  else{
-    var m = new Buffer(String("mmtships:"+message));
-    var c = dgram.createSocket("udp4");
-      
-    c.send(m, 0, m.length, sendPort, IP, function(err, bytes) {
+  } else {
+    var m = new Buffer(String('mmtships:' + message));
+    var c = dgram.createSocket('udp4');
+
+    c.send(m, 0, m.length, sendPort, IP, function (err, bytes) {
       c.close();
     });
   }
-  
-}
 
+}
