@@ -29,7 +29,7 @@ var app = require('http').createServer(handler)
   , fs = require('fs')
   , players = []
   , dgram = require('dgram')
-  , myPlayername = "Basi"
+  , myPlayername = "Josef"
   , broadcastSent = false
 	, lastReceivingPlayer = ""
   , nextCommand = false
@@ -43,11 +43,11 @@ var app = require('http').createServer(handler)
   , stopSendAliveMsg = false
   , timeout = 20000
   , chosenPlayer = ""
-  , broadcastAddress = "localhost"//"78.104.171.255";
+  , broadcastAddress = "78.104.171.255"
   , sendPort = "1234"
-  , receivePort = "4321";
+  , receivePort = "1234";
   
-app.listen(3002);
+app.listen(3001);
 
 
 // the server itself just renders client.html and nothing else
