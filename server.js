@@ -111,6 +111,7 @@ io.sockets.on('connection', function (socket) {
     else if( parseMsg(data)[1] == "shot"){
       stopSendingMissOrHit = true;
       gotMissedOrHit = false;
+      console.log("shot:" + parseMsg(data)[2] + ":" + parseMsg(data)[3]);
       sendMessage(playerIP, "shot:" + parseMsg(data)[2] + ":" + parseMsg(data)[3], true, timeout, 2000, gotMissedOrHit, true);
     }
     else if( parseMsg(data)[1] == "miss"){
@@ -122,7 +123,6 @@ io.sockets.on('connection', function (socket) {
       sendMessage(playerIP, "hit", true, timeout, 2000, stopSendingMissOrHit, true);
     }
 
-    console.log('message sent: mmtships:' + consoleMessage + ' to: ' + playerIP);
   });
 });
 
@@ -180,7 +180,7 @@ function createMessageSocket(playerSocket) {
       startGameSent = true;
       
       if(tmp_msg[1] == "accepted"){
-
+        
         gotInvitation = false;
         status = 'playing';
         startGameTimeout();

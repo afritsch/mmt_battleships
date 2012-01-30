@@ -46,6 +46,7 @@
       alert("Player " + playqueries[0] + " lasst dir den Vortritt! Du darfst beginnen");
     }
     else if( playqueries[0] == "shot" ){
+      alert("gotshot");
       if(player[playerqueries[1]][playerqueries[2]][0] < 100){
         socket.emit('myGameSocket', currentEnemy+":hit");
         setImage(currentShot.x, currentShot.y, 103, true);
