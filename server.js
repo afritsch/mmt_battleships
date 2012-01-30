@@ -100,6 +100,8 @@ io.sockets.on('connection', function (socket) {
       if(parseMsg(data)[1] == "accepted"){
         sendMessage(playerIP, parseMsg(data)[1], true, timeout, 2000, nextCommand, true);
         status = "playing";
+				gameStarted = true;
+				 console.log('status' + status );
         startGameTimeout();
         //sendMessage(playerIP, "positionsset:"+id, true, timeout, 2000, nextCommand, true);
         //id++;
@@ -122,7 +124,6 @@ io.sockets.on('connection', function (socket) {
       stopSendingMissOrHit = false;
       sendMessage(playerIP, "hit", true, timeout, 2000, stopSendingMissOrHit, true);
     }
-
   });
 });
 
@@ -136,7 +137,6 @@ function createMessageSocket(playerSocket) {
     console.log("got message: " + msg + " from " + rinfo.address + ":" + rinfo.port);
    
 	  var tmp_msg = parseMsg(msg); // returns array -> mmtships:{PlayerName}:{SpielerStatus} parsed 1.elem mmtships   2.elem PlayerName ...	  
-	   console.log("tmp_msg[1]:"+tmp_msg[1]+" status: "+status);
      
 	  if( tmp_msg.length == 2 && !isPlayerListed(rinfo.address) && status == "waiting" && myPlayername != tmp_msg[1] && !gameStarted ){	// waiting: we got message in this form mmtships:Playername 
 	  		players.push( { playername : tmp_msg[1], playerIP : rinfo.address } ); 
@@ -161,10 +161,11 @@ function createMessageSocket(playerSocket) {
     // at this point I play with other
     
     if( tmp_msg[1] == "alive" && status == "playing" && gameStarted ){ // playing: we got a message in this form mmtships:alive
+			console.log (tmp_msg + ", "+ status + ","+gameStarted);
 			timeout = 20000;
 	  }
     
-    if( tmp_msg[1] == "positionsset" && status == "playing" && !gameStarted ){
+    if( tmp_msg[1] == "positionsset" && status == "playing"){
        console.log("got positionsset");
       nextCommand = true;
       
@@ -180,7 +181,6 @@ function createMessageSocket(playerSocket) {
       startGameSent = true;
       
       if(tmp_msg[1] == "accepted"){
-        
         gotInvitation = false;
         status = 'playing';
         startGameTimeout();
@@ -210,6 +210,7 @@ function createMessageSocket(playerSocket) {
     }
 
     // playing: we got a message in this form mmtships:hit:id
+    console.log("gameStarted:"+gameStarted + " !gotMissedOrHit: "+gotMissedOrHit);
     else if( tmp_msg[1] == "hit" && status == "playing" && !gameStarted && !gotMissedOrHit){
       id = Number(tmp_msg[2]) + 1;
       gotMissedOrHit = true;

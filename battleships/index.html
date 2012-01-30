@@ -20,7 +20,10 @@
 	var disableLinks = true;
   var currentShot = { x: 0, y: 0};
   var currentEnemy = "";
-  
+  var usedCoordsArray = [];
+  for(var i=0; i < 10; i++)
+    usedCoordsArray[i] = [];
+   
 	// method that is called when data is coming form the server
 	socket.on('playerSocket', function (data) {
 		
@@ -45,24 +48,29 @@
       disableLinks = false;
       alert("Player " + playqueries[0] + " lasst dir den Vortritt! Du darfst beginnen");
     }
-    else if( playqueries[0] == "shot" ){
-      alert("gotshot");
-      if(player[playerqueries[1]][playerqueries[2]][0] < 100){
+    else if( playqueries[0] == "shot" && !usedCoordsArray[playqueries[1]][playqueries[2] ){
+      if(player[playqueries[1]][playqueries[2]][0] < 100){
+        console.log("getroffen");
         socket.emit('myGameSocket', currentEnemy+":hit");
-        setImage(currentShot.x, currentShot.y, 103, true);
+        setImage(playqueries[1], playqueries[2], 103, false);
       }
       else{
+        console.log("nicht getroffen");
         socket.emit('myGameSocket', currentEnemy+":miss");
-        setImage(currentShot.x, currentShot.y, 102, true);
+        setImage(playqueries[1], playqueries[2], 102, false);
       }
+      usedCoordsArray[playqueries[1]][playqueries[2]] = true;
     }
     else if( playqueries[0] == "hit" ){
+      console.log("hit");
       setImage(currentShot.x, currentShot.y, 103, true);
     }
     else if( playqueries[0] == "miss" ){
+      console.log("miss");
       setImage(currentShot.x, currentShot.y, 102, true);
       disableLinks = true;
     }
+    console.log(playqueries[0]);
 	});
   
 	function showPlayRequest(playername){
