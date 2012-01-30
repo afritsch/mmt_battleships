@@ -48,29 +48,29 @@
       disableLinks = false;
       alert("Player " + playqueries[0] + " lasst dir den Vortritt! Du darfst beginnen");
     }
-    else if( playqueries[0] == "shot" && !usedCoordsArray[playqueries[1]][playqueries[2] ){
+    else if( playqueries[0] == "shot" && !usedCoordsArray[playqueries[1]][playqueries[2]] ){
       if(player[playqueries[1]][playqueries[2]][0] < 100){
-        console.log("getroffen");
+        console.log("gegner hat getroffen");
         socket.emit('myGameSocket', currentEnemy+":hit");
         setImage(playqueries[1], playqueries[2], 103, false);
       }
       else{
-        console.log("nicht getroffen");
+        disableLinks = false;
+        console.log("gegner hat nicht getroffen");
         socket.emit('myGameSocket', currentEnemy+":miss");
         setImage(playqueries[1], playqueries[2], 102, false);
       }
       usedCoordsArray[playqueries[1]][playqueries[2]] = true;
     }
     else if( playqueries[0] == "hit" ){
-      console.log("hit");
+      console.log("ich habe getroffen");
       setImage(currentShot.x, currentShot.y, 103, true);
     }
     else if( playqueries[0] == "miss" ){
-      console.log("miss");
+      console.log("ich habe nicht getroffen");
       setImage(currentShot.x, currentShot.y, 102, true);
       disableLinks = true;
     }
-    console.log(playqueries[0]);
 	});
   
 	function showPlayRequest(playername){
