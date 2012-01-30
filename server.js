@@ -34,6 +34,8 @@ var app = require('http').createServer(handler)
 	, lastReceivingPlayer = ""
   , nextCommand = false
   , gameStarted = false
+  , gotMissedOrHit = false
+  , stopSendingMissOrHit = true
   , showInfo = true
   , gotInvitation = false
   , startGameSent = false
@@ -105,7 +107,19 @@ io.sockets.on('connection', function (socket) {
       }
       else
         sendMessage(playerIP, parseMsg(data)[1], true, 6000, 2000, false, true); // send declined
-       
+    }
+    else if( parseMsg(data)[1] == "shot"){
+      stopSendingMissOrHit = true;
+      gotMissedOrHit = false;
+      sendMessage(playerIP, "shot:" + parseMsg(data)[2] + ":" + parseMsg(data)[3], true, timeout, 2000, gotMissedOrHit, true);
+    }
+    else if( parseMsg(data)[1] == "miss"){
+      stopSendingMissOrHit = false;
+      sendMessage(playerIP, "miss", true, timeout, 2000, stopSendingMissOrHit, true);
+    }
+    else if( parseMsg(data)[1] == "hit"){
+      stopSendingMissOrHit = false;
+      sendMessage(playerIP, "hit", true, timeout, 2000, stopSendingMissOrHit, true);
     }
 
     console.log('message sent: mmtships:' + consoleMessage + ' to: ' + playerIP);
@@ -190,19 +204,22 @@ function createMessageSocket(playerSocket) {
 
     else if(tmp_msg[1] == 'shot' && status == 'playing' && gameStarted ) {
       nextCommand = false;
+      stopSendingMissOrHit = true;
       playerSocket.emit('playerSocket', 'shot,' + tmp_msg[2] + ',' + tmp_msg[3]);
       id = Number(tmp_msg[4]) + 1;
     }
 
     // playing: we got a message in this form mmtships:hit:id
-    else if( tmp_msg[1] == "hit" && status == "playing" && !gameStarted ){
+    else if( tmp_msg[1] == "hit" && status == "playing" && !gameStarted && !gotMissedOrHit){
       id = Number(tmp_msg[2]) + 1;
-
+      gotMissedOrHit = true;
+      playerSocket.emit('playerSocket', 'hit');
     }
     // playing: we got a message in this form mmtships:miss:id
-    else if( tmp_msg[1] == "miss" && status == "playing" && !gameStarted ){
+    else if( tmp_msg[1] == "miss" && status == "playing" && !gameStarted && !gotMissedOrHit){
       id = Number(tmp_msg[2]) + 1;
-
+      gotMissedOrHit = true;
+      playerSocket.emit('playerSocket', 'miss');
     }
 
   });

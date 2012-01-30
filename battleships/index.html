@@ -23,7 +23,13 @@
 	socket.on('playerSocket', function (data) {
 		
 	  var playqueries;
-	  isPlayerList(data) ? parsePlayerList(data) : playqueries=parseMessages(data);
+	  
+    if( isPlayerList(data) ){
+      parsePlayerList(data)
+      return;
+    }
+    
+    playqueries=parseMessages(data);
 	  
 	  if(playqueries[1] == "startgame")
 	  	showPlayRequest(playqueries[0]);
@@ -34,27 +40,27 @@
       alert("Player "+ playqueries[0] + " hat abgelehnt.");
     }
     else if( playqueries[1] == "myturn" ){
- 
-      alert("Player " + playqueries[0] + " lasst dir den Vortritt! Du darfst beginnen");
       disableLinks = false;
+      alert("Player " + playqueries[0] + " lasst dir den Vortritt! Du darfst beginnen");
     }
     else if( playqueries[0] == "shot" ){
-      
-      // an server schicken miss or hit
-      // an spiel x und y weiterleiten
+      if(player[playerqueries[1]][playerqueries[2]][0] < 100){
+        socket.emit('myGameSocket', playername+":hit");
+        setImage(currentShot.x, currentShot.y, 103, true);
+      }
+      else{
+        socket.emit('myGameSocket', playername+":miss");
+        setImage(currentShot.x, currentShot.y, 102, true);
+      }
     }
     else if( playqueries[0] == "hit" ){
-      disableLinks = false;
+      setImage(currentShot.x, currentShot.y, 103, true);
     }
-    else if( playqueries[0] == "miss" )
-      alert("Du hast leider nicht getroffen!");
+    else if( playqueries[0] == "miss" ){
+      setImage(currentShot.x, currentShot.y, 102, true);
       disableLinks = true;
+    }
 	});
-  
-  function sendShot(x, y){
-    socket.emit('myGameSocket', playername + ",shot," + x + "," + y );
-  
-  }
   
 	function showPlayRequest(playername){
 		var play = confirm("Spieler " + playername + " möchte spielen");
@@ -108,6 +114,9 @@
 	var gridx = 10, gridy = 10;
 	var player = [], computer = [], playersships = [], computersships = [];
 	var playerlives = 0, computerlives = 0, playflag=true, statusmsg="";
+  
+  //for saving the current shooting information
+  var currentShot = { x: 0, y: 0};
 	
 	/* Function to preload all the images, to prevent delays during play
 	*/
@@ -122,6 +131,41 @@
 	}
 	window.status = "";
 	}
+  
+	/* Handler for clicking on the grid
+	*/
+	function gridClick(y,x) {
+    if(disableLinks)
+      return;
+    
+    currentShot.x = x;
+    currentshot.y = y;
+    
+    socket.emit('myGameSocket', playername+":shot:"+x+":"+y);
+    
+    /*if ( playflag ) {
+      if (computer[y][x][0] < 100) {
+        setImage(y,x,103,true);
+        var shipno = computer[y][x][1];
+        
+        if ( --computersships[shipno][1] == 0 ) {
+          sinkShip(computer,shipno,true);
+          alert("Glueckwunsch! Der SPIELER haben ein"+shiptypes[computersships[shipno][0]][0]+" versenkt!");
+          updateStatus();
+          if ( --computerlives == 0 ) {
+            alert("HERZLICHEN GLUECKWUNSCH!!! DER SPIELER HAT GEWONNEN!!!");
+            playflag = false;
+          }
+        }
+        if ( playflag ) 
+          computerMove();
+      }
+      else if (computer[y][x][0] == 100) {
+          setImage(y,x,102,true);
+          computerMove();
+      }
+    }*/
+  }
 	
 	/* Function to place the ships in the grid
 	*/
@@ -188,15 +232,15 @@
 	
 	/* Function to change an image shown on a grid
 	*/
-	function setImage(y,x,id,ispc) {
-	if ( ispc ) {
-	computer[y][x][0] = id;
-	document.images["pc"+y+"_"+x].src = "http://andyf.multimediatechnology.at/schiffe/batt"+id+".gif";
-	}
-	else {
-	player[y][x][0] = id;
-	document.images["ply"+y+"_"+x].src = "http://andyf.multimediatechnology.at/schiffe/batt"+id+".gif";
-	   }
+	function setImage(x,y,id,ispc) {
+    if ( ispc ) {
+      computer[y][x][0] = id;
+      document.images["pc"+y+"_"+x].src = "http://andyf.multimediatechnology.at/schiffe/batt"+id+".gif";
+    }
+    else {
+      player[y][x][0] = id;
+      document.images["ply"+y+"_"+x].src = "http://andyf.multimediatechnology.at/schiffe/batt"+id+".gif";
+    }
 	}
 	
 	/* Function to insert HTML source for a grid
@@ -211,32 +255,6 @@
 	document.write ('<a href="javascript:void(0);"><img style="border-style: solid; border-width: 1px; border-color: #BBBEFF; cursor: default" name="ply'+y+'_'+x+'" src="http://andyf.multimediatechnology.at/schiffe/batt'+player[y][x][0]+'.gif" width=16 height=16></a>');
 	}
 	document.write('<br>');
-	   }
-	}
-	
-	/* Handler for clicking on the grid
-	*/
-	function gridClick(y,x) {
-  if(disableLinks)return;
-	if ( playflag ) {
-	if (computer[y][x][0] < 100) {
-	setImage(y,x,103,true);
-	var shipno = computer[y][x][1];
-	if ( --computersships[shipno][1] == 0 ) {
-	sinkShip(computer,shipno,true);
-	alert("Glueckwunsch! Der SPIELER haben ein"+shiptypes[computersships[shipno][0]][0]+" versenkt!");
-	updateStatus();
-	if ( --computerlives == 0 ) {
-	alert("HERZLICHEN GLUECKWUNSCH!!! DER SPIELER HAT GEWONNEN!!!");
-	playflag = false;
-	}
-	   }
-	if ( playflag ) computerMove();
-	}
-	else if (computer[y][x][0] == 100) {
-	setImage(y,x,102,true);
-	computerMove();
-	      }
 	   }
 	}
 	
@@ -373,7 +391,7 @@
 	document.write("</td><td>");
 	showGrid(false);
 	updateStatus();
-	//setInterval("setStatus();", 500);
+	setInterval("setStatus();", 500);
 </script>
 </head>
 <body>	
