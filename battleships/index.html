@@ -49,7 +49,7 @@
       alert("Player " + playqueries[0] + " lasst dir den Vortritt! Du darfst beginnen");
     }
     else if( playqueries[0] == "shot" && !usedCoordsArray[playqueries[1]][playqueries[2]] ){
-      if(player[playqueries[1]][playqueries[2]][0] < 100){
+      if(player[playqueries[2]][playqueries[1]][0] < 100){
         console.log("gegner hat getroffen");
         socket.emit('myGameSocket', currentEnemy+":hit");
         setImage(playqueries[1], playqueries[2], 103, false);
@@ -60,7 +60,6 @@
         socket.emit('myGameSocket', currentEnemy+":miss");
         setImage(playqueries[1], playqueries[2], 102, false);
       }
-      usedCoordsArray[playqueries[1]][playqueries[2]] = true;
     }
     else if( playqueries[0] == "hit" ){
       console.log("ich habe getroffen");
@@ -146,7 +145,11 @@
 	function gridClick(y,x) {
     if(disableLinks)
       return;
+      
+    if(usedCoordsArray[x][y] == true)
+      return;
     
+    usedCoordsArray[x][y] = true;
     currentShot.x = x;
     currentShot.y = y;
     

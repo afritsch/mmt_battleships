@@ -45,8 +45,8 @@ var app = require('http').createServer(handler)
   , stopSendAliveMsg = false
   , timeout = 20000
   , chosenPlayer = ""
-  , broadcastAddress = "78.104.171.255"
-  , sendPort = "1234"
+  , broadcastAddress = "localhost"//"78.104.171.255"
+  , sendPort = "4321"
   , receivePort = "1234";
   
 app.listen(3001);
@@ -104,17 +104,17 @@ io.sockets.on('connection', function (socket) {
     else if( parseMsg(data)[1] == "shot"){
       stopSendingMissOrHit = true;
       gotMissedOrHit = false;
-      sendMessage(playerIP, "shot:" + parseMsg(data)[2] + ":" + parseMsg(data)[3], true, timeout, 2000, gotMissedOrHit, true, id++);
-      console.log("sent shot:" + parseMsg(data)[2] + ":" + parseMsg(data)[3]);
+      sendMessage(playerIP, "shot:" + parseMsg(data)[2] + ":" + parseMsg(data)[3] + ":" + (++id), true, timeout, 2000, gotMissedOrHit, true);
+      console.log("sent shot:" + parseMsg(data)[2] + ":" + parseMsg(data)[3] + ":" + id);
     }
     else if( parseMsg(data)[1] == "miss"){
       stopSendingMissOrHit = false;
-      sendMessage(playerIP, "miss", true, timeout, 2000, stopSendingMissOrHit, true);
+      sendMessage(playerIP, "miss:" + id, true, timeout, 2000, stopSendingMissOrHit, true);
       console.log("sent miss");
     }
     else if( parseMsg(data)[1] == "hit"){
       stopSendingMissOrHit = false;
-      sendMessage(playerIP, "hit", true, timeout, 2000, stopSendingMissOrHit, true);
+      sendMessage(playerIP, "hit:" + id, true, timeout, 2000, stopSendingMissOrHit, true);
       console.log("sent hit");
     }
   });
@@ -126,16 +126,10 @@ function createMessageSocket(playerSocket) {
   // message socket for listening 
 
   mSocket.on("message", function (msg, rinfo) {
-   
 	  var tmp_msg = parseMsg(msg); // returns array -> mmtships:{PlayerName}:{SpielerStatus} parsed 1.elem mmtships   2.elem PlayerName ...	  
     
-    if( !(tmp_msg[2] > id || tmp_msg[4] > id) && tmp_msg[2] != undefined && tmp_msg[4] != undefined)
-      return;
-      
-    console.log("got message: " + msg + " from " + rinfo.address + ":" + rinfo.port);
     
-    
-	  if( tmp_msg.length == 2 && !isPlayerListed(rinfo.address) && status == "waiting" && myPlayername != tmp_msg[1] && !gameStarted ){	// waiting: we got message in this form mmtships:Playername 
+	  if( tmp_msg.length == 2 && !isPlayerListed(rinfo.address) && status == "waiting" && !gameStarted ){	// waiting: we got message in this form mmtships:Playername 
 	  		players.push( { playername : tmp_msg[1], playerIP : rinfo.address } ); 
 	  		sendPlayerList(playerSocket); 
 	  }
@@ -150,7 +144,7 @@ function createMessageSocket(playerSocket) {
         gotInvitation = true;
 	  }
 	  // waiting or playing: we are sending a message in this form mmtships:shipNeutrilaizers:status
-	  else if( lastReceivingPlayer != rinfo.adress && tmp_msg[2] != "startgame"  &&  myPlayername != tmp_msg[1] ){
+	  else if( lastReceivingPlayer != rinfo.adress && tmp_msg[2] != "startgame"){
 	  		sendMessage(rinfo.address, status, false); 
 				lastReceivingPlayer = rinfo.adress;
 	  }
@@ -193,21 +187,22 @@ function createMessageSocket(playerSocket) {
     // playing: we got a message in this form mmtships:shot:x:y:id
 
     else if(tmp_msg[1] == 'shot' && status == 'playing' && gameStarted ) {
+    console.log("got shot "+tmp_msg[2] + " enemy id:" + tmp_msg[4] + "  my ID:" + id + "\n full msg:"+msg);
       nextCommand = false;
       stopSendingMissOrHit = true;
       playerSocket.emit('playerSocket', 'shot,' + tmp_msg[2] + ',' + tmp_msg[3]);
-      id = Number(tmp_msg[4]) + 1;
+      id = Number(tmp_msg[4]);
     }
 
     // playing: we got a message in this form mmtships:hit:id
     else if( tmp_msg[1] == "hit" && status == "playing" && gameStarted && !gotMissedOrHit){
-      id = Number(tmp_msg[2]) + 1;
+      id = Number(tmp_msg[2]);
       gotMissedOrHit = true;
       playerSocket.emit('playerSocket', 'hit');
     }
     // playing: we got a message in this form mmtships:miss:id
     else if( tmp_msg[1] == "miss" && status == "playing" && gameStarted && !gotMissedOrHit){
-      id = Number(tmp_msg[2]) + 1;
+      id = Number(tmp_msg[2]);
       gotMissedOrHit = true;
       playerSocket.emit('playerSocket', 'miss');
     }
@@ -257,7 +252,7 @@ function startGameTimeout(){
 	}
 }
 
-function sendMessage(IP, message, recursive, timeout, frequency, stopper, value, nextId) {
+function sendMessage(IP, message, recursive, timeout, frequency, stopper, value) {
 
   if(recursive) {
     var stopSendingMessage = 0;
@@ -266,7 +261,7 @@ function sendMessage(IP, message, recursive, timeout, frequency, stopper, value,
       var m = new Buffer(String('mmtships:' + message));
       var c = dgram.createSocket('udp4');
 
-      if(stopSendingMessage >= timeout || stopper == value || id == nextId) {
+      if(stopSendingMessage >= timeout || stopper == value) {
         clearInterval(interval);
         nextCommand = false;
         return;
