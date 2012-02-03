@@ -45,8 +45,9 @@ var app = require('http').createServer(handler)
   , stopSendAliveMsg = false
   , timeout = 20000
   , chosenPlayer = ""
-  , broadcastAddress = "localhost"//"78.104.171.255"
-  , sendPort = "4321"
+  , broadcastAddress = "78.104.171.255"
+  , myIpAddress
+  , sendPort = "1234"
   , receivePort = "1234";
   
 app.listen(3001);
@@ -127,6 +128,13 @@ function createMessageSocket(playerSocket) {
 
   mSocket.on("message", function (msg, rinfo) {
 	  var tmp_msg = parseMsg(msg); // returns array -> mmtships:{PlayerName}:{SpielerStatus} parsed 1.elem mmtships   2.elem PlayerName ...	  
+    
+    
+    if( myIpAddress == undefined && tmp_msg[1] == myPlayername )
+      myIpAddress = String(rinfo.address);
+        
+    if( myIpAddress == String(rinfo.address) )
+      return;
     
     
 	  if( tmp_msg.length == 2 && !isPlayerListed(rinfo.address) && status == "waiting" && !gameStarted ){	// waiting: we got message in this form mmtships:Playername 
@@ -270,7 +278,7 @@ function sendMessage(IP, message, recursive, timeout, frequency, stopper, value)
       c.send(m, 0, m.length, sendPort, IP, function (err, bytes) {
         c.close();
       });
-
+      console.log(message);
       stopSendingMessage += frequency;
     }, frequency);
   } else {
